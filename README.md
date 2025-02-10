@@ -11,3 +11,12 @@ The full documented source code for IDlE_Shit
 - Once creature dies that current binary gets stored under the creatures name as a binary
 - Consumable items are stored as JSON files
 - The config file is stored in a JSON format
+
+# Adding feature
+- When adding a new feature follow the steps below to add it properly
+- Design layout of new page and know functionality
+- In BasicApp structure add the layout
+- Add all appropriate button, labels and anything else to the disable all function
+- Create any neccecary function
+- Any logic function should be called from a seperate file for readability
+- Any page changing buttons should have logic in function
