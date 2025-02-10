@@ -11,7 +11,7 @@ The full documented source code for IDlE_Shit
 - Once creature dies that current binary gets stored under the creatures name as a binary
 - Consumable items are stored as JSON files
 - The config file is stored in a JSON format
-- All assets saved as 256 Colour Bitmap
+- All assets saved as 256 Colour Bitmap <lol use 24bit if it looks to shit but should make it charming lol>
 
 # Adding feature
 - When adding a new feature follow the steps below to add it properly
