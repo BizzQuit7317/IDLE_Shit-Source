@@ -1,6 +1,10 @@
 # IDLE_Shit-Source
 The full documented source code for IDlE_Shit
 
+# Game Settings
+- The default screen size is 1280 x 720
+- This is changeable currently only manually in config file
+
 # Storing Files
 - Player data is stored as a binary file
 - Creature data is stored in a current binary file
