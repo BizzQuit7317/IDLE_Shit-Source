@@ -21,3 +21,6 @@ The full documented source code for IDlE_Shit
 - Create any neccecary function
 - Any logic function should be called from a seperate file for readability
 - Any page changing buttons should have logic in function
+
+# Bugs
+- If you rebirth then quite before saving it will corupt the save file <currently saving on exit_routine to ensure file is not corupted>
