@@ -1,0 +1,8 @@
+[
+    {
+      "WNDW_X": 1280,
+      "WNDW_Y": 720,
+      "DEFAULT_PLAYER_PATH":"Saves/playerData.bin",
+      "DEFAULT_CREATURE_PATH":"Creatures/creatureData.bin"
+    }
+]

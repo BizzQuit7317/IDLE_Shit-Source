@@ -1,0 +1,58 @@
+[
+    {
+      "Name": "Apple",
+      "Type": true,
+      "Value": 10,
+      "Cost":5,
+      "img_path":"Assets/apple.bmp"
+    },
+    {
+      "Name": "Carrot",
+      "Type": true,
+      "Value": 15,
+      "Cost":7,
+      "img_path":"Assets/carrot.bmp"
+    },
+    {
+      "Name": "Water",
+      "Type": false,
+      "Value": 5,
+      "Cost":2,
+      "img_path":"Assets/water.bmp"
+    },
+    {
+      "Name": "Orange_Juice",
+      "Type": false,
+      "Value": 10,
+      "Cost":5,
+      "img_path":"Assets/orange_juice.bmp"
+    },
+    {
+      "Name": "Baloney_and_Tren_sandwhich",
+      "Type": true,
+      "Value": 50,
+      "Cost":3000,
+      "img_path":"Assets/baloney_tren_sandwhich.bmp"
+    },
+    {
+      "Name": "Mountain_Dew_Baja_Blast",
+      "Type": false,
+      "Value": 69,
+      "Cost":999999999999,
+      "img_path":"Assets/Mountain_Dew_Baja_Blast.bmp"
+    },
+    {
+        "Name": "Cat Piss",
+        "Type": false,
+        "Value": -100,
+        "Cost":1,
+        "img_path":"Assets/Mountain_Dew_Baja_Blast.bmp"
+      },
+      {
+          "Name": "Dog Shit",
+          "Type": true,
+          "Value": -100,
+          "Cost":1,
+          "img_path":"Assets/Mountain_Dew_Baja_Blast.bmp"
+        }
+]
