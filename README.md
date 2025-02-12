@@ -5,6 +5,9 @@ The full documented source code for IDlE_Shit
 - The default screen size is 1280 x 720
 - This is changeable currently only manually in config file
 
+# Game Info
+- The currency will be called Creature Points (cp) and will be measured in TeraBytes (Tb) *ifykyk*
+
 # Storing Files
 - Player data is stored as a binary file
 - Creature data is stored in a current binary file
