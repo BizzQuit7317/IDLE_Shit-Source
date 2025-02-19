@@ -10,6 +10,7 @@ use std::fs::{self, File};
 use crate::{common_functions, file_control};
 use crate::player::Player;
 use crate::creature::Creature;
+use crate::structs;
 
 /*
     Setting lazy statics to use during running
@@ -41,6 +42,8 @@ lazy_static!{
         LifeSpan:86400.0,
         Status:true,        
     });
+
+    static ref CONSUMABLES_ALL_DATA: Mutex<Vec<structs::Consumable>> = Mutex::new(Vec::new());
 }
 
 /*
@@ -95,7 +98,7 @@ pub struct BasicApp {
     back_main_button: nwg::Button,
 
     #[nwg_control(text: "Slaughter Creature", size: (426, 100), position: (426, 300), flags: "DISABLED")]
-    #[nwg_events(OnButtonClick: [BasicApp::test_button])]
+    #[nwg_events(OnButtonClick: [BasicApp::kill_button])]
     kill_creature_button: nwg::Button,
 
     #[nwg_control(text: "Test Function", size: (426, 100), position: (426, 450), flags: "DISABLED")]
@@ -134,7 +137,7 @@ pub struct BasicApp {
     creature_button: nwg::Button,
 
     #[nwg_control(text: "Store", size: (280, 60), position: (10, 200), flags: "DISABLED")]
-    #[nwg_events(OnButtonClick: [BasicApp::test_button])]
+    #[nwg_events(OnButtonClick: [BasicApp::store_page])]
     store_button: nwg::Button,
 
     #[nwg_control(text: "Save", size: (280, 60), position: (10, 300), flags: "DISABLED")]
@@ -147,7 +150,7 @@ pub struct BasicApp {
     #[nwg_control(text: "", size: (280, 60), position: (10, 10), flags: "DISABLED")]
     player_stats: nwg::Label,
 
-    #[nwg_control(text: "", size: (100, 60), position: (400, 50), flags: "DISABLED")]
+    #[nwg_control(text: "", size: (100, 40), position: (400, 50), flags: "DISABLED")]
     player_points: nwg::Label,
 
     #[nwg_control(text: "", size: (150, 80), position: (400, 100), flags: "DISABLED")]
@@ -193,6 +196,69 @@ pub struct BasicApp {
     #[nwg_events(OnButtonClick: [BasicApp::use_inv_7_button])]
     inv_7_button: nwg::Button,
 
+    /*
+        Store page
+     */
+    #[nwg_control(text: "", size: (280, 60), position: (300, 350), flags: "DISABLED")]
+    #[nwg_events(OnButtonClick: [BasicApp::buy_upgrade_button])]
+    upgrade_cps_button: nwg::Button,
+
+    #[nwg_control(text: "0", size: (100, 100), position: (300, 150), flags: "DISABLED")]
+    #[nwg_events(OnButtonClick: [BasicApp::buy_item_0_button])]
+    itm_1_button: nwg::Button,
+
+    #[nwg_control(text: "1", size: (100, 100), position: (400, 150), flags: "DISABLED")]
+    #[nwg_events(OnButtonClick: [BasicApp::buy_item_1_button])]
+    itm_2_button: nwg::Button,
+
+    #[nwg_control(text: "2", size: (100, 100), position: (500, 150), flags: "DISABLED")]
+    #[nwg_events(OnButtonClick: [BasicApp::buy_item_2_button])]
+    itm_3_button: nwg::Button,
+
+    #[nwg_control(text: "3", size: (100, 100), position: (600, 150), flags: "DISABLED")]
+    #[nwg_events(OnButtonClick: [BasicApp::buy_item_3_button])]
+    itm_4_button: nwg::Button,
+
+    #[nwg_control(text: "4", size: (100, 100), position: (300, 250), flags: "DISABLED")]
+    #[nwg_events(OnButtonClick: [BasicApp::buy_item_4_button])]
+    itm_5_button: nwg::Button,
+
+    #[nwg_control(text: "5", size: (100, 100), position: (400, 250), flags: "DISABLED")]
+    #[nwg_events(OnButtonClick: [BasicApp::buy_item_5_button])]
+    itm_6_button: nwg::Button,
+
+    #[nwg_control(text: "6", size: (100, 100), position: (500, 250), flags: "DISABLED")]
+    #[nwg_events(OnButtonClick: [BasicApp::buy_item_6_button])]
+    itm_7_button: nwg::Button,
+
+    #[nwg_control(text: "7", size: (100, 100), position: (600, 250), flags: "DISABLED")]
+    #[nwg_events(OnButtonClick: [BasicApp::buy_item_7_button])]
+    itm_8_button: nwg::Button,
+
+    /*
+        Rebirth Page
+    */
+    #[nwg_resource(source_file: Some("Assets/Creatures/chad_b.bmp"))]
+    dead_creature_bitmap: nwg::Bitmap,
+    #[nwg_control(size: (200, 90), position: (300, 50), bitmap: Some(&data.dead_creature_bitmap), flags: "DISABLED")]
+    dead_creature_image_frame: nwg::ImageFrame,
+
+    #[nwg_control(size: (200, 150), position: (300, 150), flags: "DISABLED")]
+    rebirth_stats_label: nwg::Label,
+
+    #[nwg_control(text: "Rebirth", size: (280, 60), position: (300, 300), flags: "DISABLED")]
+    #[nwg_events(OnButtonClick: [BasicApp::creature_page])]
+    confirm_rebirth_button: nwg::Button,
+
+    /*
+        Creature Name Page <only accessable after player rebirths 3 times>
+    */
+    #[nwg_control(text: "Creature Name", size: (280, 60), position: (300, 320), flags: "DISABLED")]
+    creature_input: nwg::TextInput,
+
+    #[nwg_control(text: "Ok", size: (280, 60), position: (300, 380), flags: "DISABLED")]
+    #[nwg_events(OnButtonClick: [BasicApp::handle_rebirth_creature_name])]
+    enter_creature_button: nwg::Button,
     
 
     /*
@@ -210,7 +276,6 @@ impl BasicApp {
     fn exit_routine(&self) {
         /*
             This is the standard exit routine when closing the game
-            will save the game to the running user by default
         */
         nwg::simple_message("Exit", "Closing Programme");
         self.save_game();
@@ -224,10 +289,10 @@ impl BasicApp {
             must add the controls into here. You can exclude buttons like 
             settings that are permenantly on the screen
         */
-        let buttons = vec![&self.save_button, &self.offline_update_button, &self.store_button, &self.creature_button, &self.inv_0_button, &self.inv_1_button, &self.inv_2_button, &self.inv_3_button, &self.inv_4_button, &self.inv_5_button, &self.inv_6_button, &self.inv_7_button, &self.enter_name_button, &self.cancel_name_button, &self.kill_creature_button, &self.test_button, &self.back_main_button, &self.back_start_button, &self.new_button, &self.load_button];
-        let labels = vec![&self.offline_update_lable, &self.loading_message, &self.player_points, &self.player_stats, &self.creature_stats, &self.creature_productivity];
-        let textInputs = vec![&self.username_input];
-        let imageFrames = vec![&self.start_page_logo_image_frame, &self.creature_image_frame];
+        let buttons = vec![&self.itm_1_button, &self.itm_2_button, &self.itm_3_button, &self.itm_4_button, &self.itm_5_button, &self.itm_6_button, &self.itm_7_button, &self.itm_8_button, &self.upgrade_cps_button, &self.enter_creature_button, &self.confirm_rebirth_button, &self.save_button, &self.offline_update_button, &self.store_button, &self.creature_button, &self.inv_0_button, &self.inv_1_button, &self.inv_2_button, &self.inv_3_button, &self.inv_4_button, &self.inv_5_button, &self.inv_6_button, &self.inv_7_button, &self.enter_name_button, &self.cancel_name_button, &self.kill_creature_button, &self.test_button, &self.back_main_button, &self.back_start_button, &self.new_button, &self.load_button];
+        let labels = vec![&self.rebirth_stats_label, &self.offline_update_lable, &self.loading_message, &self.player_points, &self.player_stats, &self.creature_stats, &self.creature_productivity];
+        let textInputs = vec![&self.username_input, &self.creature_input];
+        let imageFrames = vec![&self.start_page_logo_image_frame, &self.creature_image_frame, &self.dead_creature_image_frame];
 
         common_functions::set_button_state(buttons, labels, textInputs, imageFrames, false);
     }
@@ -285,7 +350,7 @@ impl BasicApp {
         /*
             Set labels and buttons before changing screen over
         */
-        let _ = &self.set_creature_page_buttons();
+        let _ = &self.set_creature_page_labels();
 
         self.disable_all_controls();
 
@@ -318,6 +383,41 @@ impl BasicApp {
         common_functions::set_button_state(buttons, labels, textInputs, imageFrames, true);
     }
 
+    fn rebirth_page(&self) {
+        let _ = self.set_rebirth_page_labels();
+
+        self.disable_all_controls();
+
+        let buttons = vec![&self.confirm_rebirth_button];
+        let labels = vec![&self.rebirth_stats_label];
+        let textInputs = vec![];
+        let imageFrames = vec![&self.dead_creature_image_frame];
+
+        common_functions::set_button_state(buttons, labels, textInputs, imageFrames, true); 
+    }
+
+    fn name_creature_page(&self) {
+        self.disable_all_controls();
+
+        let buttons = vec![&self.enter_creature_button];
+        let labels = vec![];
+        let textInputs = vec![&self.creature_input];
+        let imageFrames = vec![];
+
+        common_functions::set_button_state(buttons, labels, textInputs, imageFrames, true);
+    }
+
+    fn store_page(&self) {
+        self.disable_all_controls();
+
+        let buttons = vec![&self.itm_1_button, &self.itm_2_button, &self.itm_3_button, &self.itm_4_button, &self.itm_5_button, &self.itm_6_button, &self.itm_7_button, &self.itm_8_button, &self.upgrade_cps_button];
+        let labels = vec![&self.player_points, &self.player_stats];
+        let textInputs = vec![];
+        let imageFrames = vec![];
+
+        common_functions::set_button_state(buttons, labels, textInputs, imageFrames, true);
+        &self.side_buttons(); //Call second to enable buttons along side
+    }
     /*
         Functional buttons
     */
@@ -335,6 +435,7 @@ impl BasicApp {
 
         let _ = &self.load_player_to_memory();
         let _ = &self.load_creature_to_memory();
+        let _ = &self.load_consumables_to_memory();
 
         //Logic from here switches page
         self.creature_page();
@@ -353,17 +454,79 @@ impl BasicApp {
 
         self.load_player_to_memory();
         self.load_creature_to_memory();
+        let _ = &self.load_consumables_to_memory();
 
-        self.set_offline_page_buttons();
+        self.set_offline_page_labels();
 
         //Logic from here switches page
         self.offline_page();
     }
 
+    fn kill_button(&self) {
+        //Sets creature lifespan to 3 seconds so it dies quickly
+        let mut CREATURE = CREATURE_DATA.lock().unwrap();
+        let _ = CREATURE.LifeSpan = 3.0;
+    }
+    
+    fn confirm_creature_name(&self) -> String {
+        self.creature_input.text()
+    }
+    
+    fn buy_upgrade_button(&self) {
+        {
+            let mut PLAYER = PLAYER_DATA.lock().unwrap();
+
+            let upgrade_cost = PLAYER.cps_upgrade_cost;
+            let cps_upgrade = PLAYER.cps_upgrade;
+
+            if PLAYER.buy_upgrade(upgrade_cost) {   
+                PLAYER.update_cps(cps_upgrade);
+                PLAYER.update_cps_costs();
+            }
+
+            let upgrade_text = format!("Upgrade CPS to {:?} | For {:?}", PLAYER.cps_upgrade, PLAYER.cps_upgrade_cost);
+            let player_stat_text = format!("Name: {}\nCPS: {}", PLAYER.Name, PLAYER.CPS);
+
+            &self.upgrade_cps_button.set_text(&upgrade_text);
+            &self.player_stats.set_text(&player_stat_text);
+        }
+    }
+    
+    fn get_consumable_from_name(&self, con: String) {
+        let mut PLAYER = PLAYER_DATA.lock().unwrap();
+
+        let  CONSUMABLES = CONSUMABLES_ALL_DATA.lock().unwrap();
+        let mut item_from_list: structs::Consumable = structs::Consumable {
+            Name:"None".to_string(),
+            Type:true,
+            Value:0.0,
+            Cost:0.0,
+            img_path:"None".to_string(),
+        };
+
+        for ITEM in CONSUMABLES.clone() {
+            if con.lines().next().unwrap() == ITEM.Name {
+                item_from_list = ITEM;
+            }
+        }
+
+        if PLAYER.Currency >= item_from_list.Cost {
+            if PLAYER.Inventory_Con.len() <= PLAYER.Inv_Con_Max {
+                PLAYER.Currency -= item_from_list.Cost;
+                PLAYER.Inventory_Con.push(item_from_list);
+            } else {
+                println!("At item capacity!!!")
+            }
+        } else {
+            println!("Can't afford that item currently!!!!");
+        }
+
+    }
+
     /*
-        Setting Buttons
+        Setting page labels
     */
-    fn set_creature_page_buttons(&self) {
+    fn set_creature_page_labels(&self) {
         let PLAYER = PLAYER_DATA.lock().unwrap();
         let player_stat_text = format!("Name: {}\nCPS: {}", PLAYER.Name, PLAYER.CPS);
 
@@ -379,7 +542,7 @@ impl BasicApp {
         let _ = &self.player_points.set_text(&player_points);
     }
 
-    fn set_offline_page_buttons(&self) {
+    fn set_offline_page_labels(&self) {
         let CREATURE = CREATURE_DATA.lock().unwrap();
         let mut PLAYER = PLAYER_DATA.lock().unwrap();
 
@@ -390,11 +553,55 @@ impl BasicApp {
         let points_earned = PLAYER.CPS * time_diff;
         let human_time_diff = common_functions::human_readable_time_from_epoch(time_diff);
 
-        let _ = PLAYER.update_currency(points_earned); //Make sure to update the player points
+        //let _ = PLAYER.update_currency(points_earned); //Make sure to update the player points
 
         let offline_update_text = format!("You were away for {}\nWhile away {} produced {} creature points\n\n{} also lost {} of life!", human_time_diff, CREATURE.Name, points_earned, CREATURE.Name, human_time_diff);
         &self.offline_update_lable.set_text(&offline_update_text);
 
+    }
+
+    fn set_rebirth_page_labels(&self) {
+        /*
+            NOT WORKING THESE FUCKING PIECES OF SHIT ARE LOCKED UP SOMEWHERE
+        */
+        let CREATURE = CREATURE_DATA.lock().unwrap();
+        
+        let rebirth_text = format!("{} has died!!!!!!\n From the sunken corpse of {} you find another small creature\nYou decide to start taking care of this one aswell\nEnter a name and press rebirth to continue!", CREATURE.Name, CREATURE.Name);
+        &self.rebirth_stats_label.set_text(&rebirth_text);
+    }
+
+    fn set_inv_buttons(&self) {
+        {
+            let mut PLAYER = PLAYER_DATA.lock().unwrap();
+            let mut counter = 0;
+            let button_vect = vec![&self.inv_0_button, &self.inv_1_button, &self.inv_2_button, &self.inv_3_button, &self.inv_4_button, &self.inv_5_button, &self.inv_6_button, &self.inv_7_button];
+            for ITEM in PLAYER.Inventory_Con.clone() {
+                let button_text = format!("{} || {}", ITEM.Name, ITEM.Value);
+                button_vect[counter].set_text(&button_text);
+
+                counter += 1
+            }
+            
+        }
+    }
+
+    fn set_store_buttons(&self) {
+        {
+            let mut PLAYER = PLAYER_DATA.lock().unwrap();
+            let mut CONSUMABLES = CONSUMABLES_ALL_DATA.lock().unwrap();
+
+            let upgrade_text = format!("Upgrade CPS to {:?} | For {:?}", PLAYER.cps_upgrade, PLAYER.cps_upgrade_cost);
+            &self.upgrade_cps_button.set_text(&upgrade_text);
+
+            let buttons = vec![&self.itm_8_button, &self.itm_7_button, &self.itm_6_button, &self.itm_5_button, &self.itm_4_button, &self.itm_3_button, &self.itm_2_button, &self.itm_1_button];
+            let mut counter = 0;
+            for consumable in &*CONSUMABLES {
+                let button_text = format!("{}\nCost: {}\nValue: {}", &consumable.Name, &consumable.Cost, &consumable.Value);
+                buttons[counter].set_text(&button_text);
+
+                counter += 1;
+            }
+        }
     }
 
     /*
@@ -430,6 +637,82 @@ impl BasicApp {
         let _ = file_control::write_binary_file(&common_functions::read_setting_data_paths(false), &*CREATURE);
     }
 
+    fn handle_rebirth(&self) {
+        {
+            let NEW_CREATURE = Creature::new(String::from("Chad_2"));
+            let mut DEAD_CREATURE = CREATURE_DATA.lock().unwrap();
+            let mut CREATURE_STORE_PATH = format!("Creatures/deadCreatures/{}_data.bin", DEAD_CREATURE.Name);
+
+            match file_control::check_file(&CREATURE_STORE_PATH) {
+                true => {
+                    let mut COUNTER = 1;
+                    loop {
+                        CREATURE_STORE_PATH = format!("Creatures/deadCreatures/{}_data_({}).bin", DEAD_CREATURE.Name, COUNTER);
+                        match file_control::check_file(&CREATURE_STORE_PATH) {
+                            true => {}, //Do nothing if file name exists
+                            false => {
+                                file_control::write_binary_file(&CREATURE_STORE_PATH, &*DEAD_CREATURE); //First write the dead creature to the saves
+                                file_control::write_binary_file(&common_functions::read_setting_data_paths(false), &NEW_CREATURE); //Update the new creature to the file
+                                break;
+                            }
+                        }
+                        COUNTER += 1; //If file exists counter will go up
+                    }
+                },
+                false => {
+                    //No files can save data plainly
+                    file_control::write_binary_file(&CREATURE_STORE_PATH, &*DEAD_CREATURE);
+                    file_control::write_binary_file(&common_functions::read_setting_data_paths(false), &NEW_CREATURE);
+                },
+            }
+        } //Need this scope to keep the locking on PLAYER and CREATURE scoped correctly
+        let _ = self.load_creature_to_memory(); //Finally load the new creature to memory
+    }
+
+    fn handle_rebirth_creature_name(&self) {
+        {
+            let NEW_CREATURE = Creature::new(self.confirm_creature_name());
+            let mut DEAD_CREATURE = CREATURE_DATA.lock().unwrap();
+            let mut CREATURE_STORE_PATH = format!("Creatures/deadCreatures/{}_data.bin", DEAD_CREATURE.Name);
+
+            match file_control::check_file(&CREATURE_STORE_PATH) {
+                true => {
+                    let mut COUNTER = 1;
+                    loop {
+                        CREATURE_STORE_PATH = format!("Creatures/deadCreatures/{}_data_({}).bin", DEAD_CREATURE.Name, COUNTER);
+                        match file_control::check_file(&CREATURE_STORE_PATH) {
+                            true => {}, //Do nothing if file name exists
+                            false => {
+                                file_control::write_binary_file(&CREATURE_STORE_PATH, &*DEAD_CREATURE); //First write the dead creature to the saves
+                                file_control::write_binary_file(&common_functions::read_setting_data_paths(false), &NEW_CREATURE); //Update the new creature to the file
+                                break;
+                            }
+                        }
+                        COUNTER += 1; //If file exists counter will go up
+                    }
+                },
+                false => {
+                    //No files can save data plainly
+                    file_control::write_binary_file(&CREATURE_STORE_PATH, &*DEAD_CREATURE);
+                    file_control::write_binary_file(&common_functions::read_setting_data_paths(false), &NEW_CREATURE);
+                },
+            }
+        } //Need this scope to keep the locking on PLAYER and CREATURE scoped correctly
+        let _ = self.load_creature_to_memory(); //Finally load the new creature to memory
+        &self.creature_page();
+    }
+
+    fn load_consumables_to_memory(&self) {
+        /* 
+            Initiate the vrec to hold all consumables from Json
+         */
+        //let consumables_file = FileData::new("Json/consumables.json");
+        let consumables: Vec<structs::Consumable> = file_control::read_json_file("Json/consumables.json").unwrap();
+
+        let mut consumable_data = CONSUMABLES_ALL_DATA.lock().unwrap();
+        *consumable_data = consumables;
+    }
+
     /*
         Functions for player inventory buttons
     */
@@ -458,24 +741,79 @@ impl BasicApp {
         self.test_button();
     }
 
-
+    /*
+        Functions for store
+    */
+    fn buy_item_0_button(&self) {
+        let _ = self.get_consumable_from_name(self.itm_1_button.text().clone());
+    }
+    fn buy_item_1_button(&self) {
+        let _ = self.get_consumable_from_name(self.itm_2_button.text().clone());
+    }
+    fn buy_item_2_button(&self) {
+        let _ = self.get_consumable_from_name(self.itm_3_button.text().clone());
+    }
+    fn buy_item_3_button(&self) {
+        let _ = self.get_consumable_from_name(self.itm_4_button.text().clone());
+    }
+    fn buy_item_4_button(&self) {
+        let _ = self.get_consumable_from_name(self.itm_5_button.text().clone());
+    }
+    fn buy_item_5_button(&self) {
+        let _ = self.get_consumable_from_name(self.itm_6_button.text().clone());
+    }
+    fn buy_item_6_button(&self) {
+        let _ = self.get_consumable_from_name(self.itm_7_button.text().clone());
+    }
+    fn buy_item_7_button(&self) {
+        let _ = self.get_consumable_from_name(self.itm_8_button.text().clone());
+    }
 
     /*
         MAIN GAME LOOP
     */
     fn update_ticker(&self) {
         let mut CURRENT_FRAME = FRAME.lock().unwrap();
+        let mut creature_status = true;
         {
-            let mut PLAYER = PLAYER_DATA.lock().unwrap();
+            /*
+                This needs to be here to set the scope of creature
+                so it can be unlocked when needed in setting up other pages
+            */
             let mut CREATURE = CREATURE_DATA.lock().unwrap();
+            creature_status = CREATURE.Status;
+        }
 
-            let _ = PLAYER.Currency += PLAYER.CPS;
-            let _ = CREATURE.calculate_productivity();
-            let _ = CREATURE.hunger_and_thirst_drop(*CURRENT_FRAME);
-            let _ = CREATURE.reduce_lifespan(1.0);
-        } //sets the scope so the PLAYER is unlocked when trying to set buttons
+        if creature_status {
+            {
+                let mut PLAYER = PLAYER_DATA.lock().unwrap();
+                let mut CREATURE = CREATURE_DATA.lock().unwrap();
 
-        let _ = &self.set_creature_page_buttons();
+                PLAYER.Rebirth_Processed = false;
+                let _ = PLAYER.Currency += PLAYER.CPS;
+                let _ = CREATURE.calculate_productivity();
+                let _ = CREATURE.hunger_and_thirst_drop(*CURRENT_FRAME);
+                let _ = CREATURE.reduce_lifespan(1.0);
+            }
+
+            let _ = &self.set_creature_page_labels();
+            let _ = &self.set_inv_buttons();
+            let _ = &self.set_store_buttons();
+        } else {
+            let mut PLAYER = PLAYER_DATA.lock().unwrap();
+            if !PLAYER.Rebirth_Processed {
+                if PLAYER.Rebirths < 1 {
+                    self.rebirth_page();
+                    self.handle_rebirth();
+                } else {
+                    self.name_creature_page();
+                    //self.handle_rebirth_creature_name();
+                }
+            PLAYER.Rebirths += 1;
+            PLAYER.Rebirth_Processed = true;
+            }   
+        }
+        
 
         /*
             Update the frame
@@ -491,6 +829,5 @@ impl BasicApp {
     */
     fn test_button(&self) {
         println!("Clicked the button!!!");
-        let x = common_functions::read_setting_data_paths(true);
     }
 }
