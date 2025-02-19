@@ -523,6 +523,57 @@ impl BasicApp {
 
     }
 
+    fn use_con_from_invt(&self, btn_txt: String, button_index: usize) {
+        //println!("Button {} was clicked and had: {}", button_index, btn_txt);
+        let mut CREATURE = CREATURE_DATA.lock().unwrap();
+        let mut PLAYER = PLAYER_DATA.lock().unwrap();
+        let  CONSUMABLES = CONSUMABLES_ALL_DATA.lock().unwrap();
+        let mut item_from_list: structs::Consumable = structs::Consumable {
+            Name:"None".to_string(),
+            Type:true,
+            Value:0.0,
+            Cost:0.0,
+            img_path:"None".to_string(),
+        };
+
+        for ITEM in CONSUMABLES.clone() {
+            if btn_txt.split_whitespace().next().unwrap() == ITEM.Name {
+                item_from_list = ITEM;
+            }
+        }
+
+        let button_vect = vec![&self.inv_0_button, &self.inv_1_button, &self.inv_2_button, &self.inv_3_button, &self.inv_4_button, &self.inv_5_button, &self.inv_6_button, &self.inv_7_button];
+
+        //println!("Name looking for: {}\n current item {:?}\n#########################################################", btn_txt.split_whitespace().next().unwrap(), item_from_list);
+        CREATURE.eat_food_drink(item_from_list.Type, item_from_list.Value);
+        let inv_bool = CREATURE.eat_food_drink(item_from_list.Type, item_from_list.Value);
+        if inv_bool {
+            PLAYER.Inventory_Con.remove(button_index);
+            let button_text = format!("inv {}", button_index);
+            button_vect[button_index].set_text(&button_text);
+            //println!("{:?}\n##################################################", PLAYER.Inventory_Con);
+        }
+
+        /*
+            Redraw the buttons to shift them to new positions
+        */
+        let mut counter = 0;
+        for ITEM in PLAYER.Inventory_Con.clone() {
+            let button_text = format!("{} || {}", ITEM.Name, ITEM.Value);
+            button_vect[counter].set_text(&button_text);
+
+            counter += 1
+        }
+
+        //println!("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n| Counter =  {} || button_vect len = {}   |\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", counter, button_vect.len());
+        for i in 0..(button_vect.len() - counter) {
+            println!("{}", i+counter);
+            //let button_text = format!("inv {}", i+counter);
+            button_vect[counter].set_text("None");
+        }
+
+    }
+
     /*
         Setting page labels
     */
@@ -717,28 +768,28 @@ impl BasicApp {
         Functions for player inventory buttons
     */
     fn use_inv_1_button(&self) {
-        self.test_button();
+        let _ = self.use_con_from_invt(self.inv_1_button.text().clone(), 1);
     }
     fn use_inv_2_button(&self) {
-        self.test_button();
+        let _ = self.use_con_from_invt(self.inv_2_button.text().clone(), 2);
     }
     fn use_inv_3_button(&self) {
-        self.test_button();
+        let _ = self.use_con_from_invt(self.inv_3_button.text().clone(), 3);
     }
     fn use_inv_4_button(&self) {
-        self.test_button();
+        let _ = self.use_con_from_invt(self.inv_4_button.text().clone(), 4);
     }
     fn use_inv_5_button(&self) {
-        self.test_button();
+        let _ = self.use_con_from_invt(self.inv_5_button.text().clone(), 5);
     }
     fn use_inv_6_button(&self) {
-        self.test_button();
+        let _ = self.use_con_from_invt(self.inv_6_button.text().clone(), 6);
     }
     fn use_inv_7_button(&self) {
-        self.test_button();
+        let _ = self.use_con_from_invt(self.inv_7_button.text().clone(), 7);
     }
     fn use_inv_0_button(&self) {
-        self.test_button();
+        let _ = self.use_con_from_invt(self.inv_0_button.text().clone(), 0);
     }
 
     /*
