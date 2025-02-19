@@ -47,7 +47,6 @@ impl Player {
     }
 
     pub fn buy_upgrade(&mut self, upgrade_cost: f64) -> bool {
-        println!("Trying to buy");
         if self.Currency >= upgrade_cost {
             self.Currency -= upgrade_cost;
             true
